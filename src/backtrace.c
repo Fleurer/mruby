@@ -31,7 +31,7 @@ mrb_backtrace(mrb_state *mrb, mrb_int ciidx, mrb_bool show_i)
     }
     else {
       mrb_irep *irep = ci->proc->body.irep;
-      if (irep->filename != NULL)
+     if (irep->filename != NULL)
         filename = irep->filename;
       if (irep->lines != NULL) {
         mrb_code *pc;
@@ -55,18 +55,17 @@ mrb_backtrace(mrb_state *mrb, mrb_int ciidx, mrb_bool show_i)
     else
       sep = "#";
     method = mrb_sym2name(mrb, ci->mid);
-    fprintf(stderr, "--- %s\n", method);
 
     /* concat the caller string */
     if (method) {
       const char *cn = mrb_class_name(mrb, ci->proc->target_class);
       if (cn)
-        str = mrb_str_new_format(mrb, "%s:%d:in %s%s%s\n", filename, line, cn, sep, method);
+        str = mrb_str_new_format(mrb, "%s:%d:in `%s%s%s'", filename, line, cn, sep, method);
       else
-        str = mrb_str_new_format(mrb, "%s:%d:in %s\n", filename, line, method);
+        str = mrb_str_new_format(mrb, "%s:%d:in `%s'", filename, line, method);
     }
     else {
-      str = mrb_str_new_format(mrb, "%s:%d\n", filename, line);
+      str = mrb_str_new_format(mrb, "%s:%d", filename, line);
     }
     if (show_i) {
       tmp = mrb_str_new_format(mrb, "[%d] ", i);
@@ -96,7 +95,7 @@ mrb_print_backtrace(mrb_state *mrb)
     str = mrb_ary_shift(mrb, ary);
     if (mrb_obj_equal(mrb, str, nil))
       break;
-    fprintf(stderr, "\t%s", RSTRING_PTR(str));
+    fprintf(stderr, "\t%s\n", RSTRING_PTR(str));
   }
 #endif
 }
