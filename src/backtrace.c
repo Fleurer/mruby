@@ -11,20 +11,15 @@
 #include "mruby/array.h"
 
 mrb_value
-mrb_trace_callers(mrb_state *mrb, mrb_bool show_i)
+mrb_backtrace(mrb_state *mrb, mrb_int ciidx, mrb_bool show_i)
 {
   mrb_callinfo *ci;
-  mrb_int ciidx;
   const char *filename, *method, *sep;
   int i, line;
   mrb_value result;
   mrb_value str, tmp;
 
   result = mrb_ary_new(mrb);
-
-  ciidx = mrb_fixnum(mrb_obj_iv_get(mrb, mrb->exc, mrb_intern2(mrb, "ciidx", 5)));
-  if (ciidx >= mrb->c->ciend - mrb->c->cibase)
-    ciidx = 10;
 
   for (i = ciidx; i >= 0; i--) {
     ci = &mrb->c->cibase[i];
@@ -47,6 +42,7 @@ mrb_trace_callers(mrb_state *mrb, mrb_bool show_i)
         else {
           pc = (mrb_code*)mrb_voidp(mrb_obj_iv_get(mrb, mrb->exc, mrb_intern2(mrb, "lastpc", 6)));
         }
+
         if (irep->iseq <= pc && pc < irep->iseq + irep->ilen) {
           line = irep->lines[pc - irep->iseq - 1];
         }
@@ -59,6 +55,7 @@ mrb_trace_callers(mrb_state *mrb, mrb_bool show_i)
     else
       sep = "#";
     method = mrb_sym2name(mrb, ci->mid);
+    fprintf(stderr, "--- %s\n", method);
 
     /* concat the caller string */
     if (method) {
@@ -85,11 +82,16 @@ void
 mrb_print_backtrace(mrb_state *mrb)
 {
 #ifdef ENABLE_STDIO
+  mrb_int ciidx;
   mrb_value nil = mrb_nil_value();
   mrb_value str, ary;
 
+  ciidx = mrb_fixnum(mrb_obj_iv_get(mrb, mrb->exc, mrb_intern2(mrb, "ciidx", 5)));
+  if (ciidx >= mrb->c->ciend - mrb->c->cibase)
+    ciidx = 10;
+
   fputs("trace:\n", stderr);
-  ary = mrb_trace_callers(mrb, TRUE);
+  ary = mrb_backtrace(mrb, ciidx, TRUE);
   while (TRUE) {
     str = mrb_ary_shift(mrb, ary);
     if (mrb_obj_equal(mrb, str, nil))
