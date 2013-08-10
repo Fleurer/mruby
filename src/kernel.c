@@ -1076,6 +1076,19 @@ mrb_obj_singleton_methods_m(mrb_state *mrb, mrb_value self)
   return mrb_obj_singleton_methods(mrb, recur, self);
 }
 
+mrb_value
+mrb_caller(mrb_state *mrb)
+{
+  int i;
+  mrb_value ary, skip = mrb_fixnum_value(0);
+
+  mrb_get_args(mrb, "|i", &skip);
+  ary = mrb_trace_callers(mrb, FALSE);
+  for (i=0; i<mrb_fixnum(skip); i++)
+      mrb_ary_pop(mrb, ary);
+  return ary;
+}
+
 void
 mrb_init_kernel(mrb_state *mrb)
 {
@@ -1087,6 +1100,7 @@ mrb_init_kernel(mrb_state *mrb)
   mrb_define_class_method(mrb, krn, "iterator?",            mrb_f_block_given_p_m,           MRB_ARGS_NONE());    /* 15.3.1.2.5  */
 ;     /* 15.3.1.2.11 */
   mrb_define_class_method(mrb, krn, "raise",                mrb_f_raise,                     MRB_ARGS_ANY());     /* 15.3.1.2.12 */
+  mrb_define_class_method(mrb, krn, "caller",               mrb_caller,                      MRB_ARGS_OPT(1));
 
   mrb_define_method(mrb, krn, "singleton_class",            mrb_singleton_class,             MRB_ARGS_NONE());
 
