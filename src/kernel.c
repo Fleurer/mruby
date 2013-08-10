@@ -1077,7 +1077,7 @@ mrb_obj_singleton_methods_m(mrb_state *mrb, mrb_value self)
 }
 
 mrb_value
-mrb_f_caller(mrb_state *mrb)
+mrb_f_caller(mrb_state *mrb, mrb_value self)
 {
   mrb_int i, ciidx;
   mrb_value ary, skip = mrb_fixnum_value(0);
