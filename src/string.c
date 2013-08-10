@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include "mruby.h"
 #include "mruby/array.h"
 #include "mruby/class.h"
@@ -40,6 +41,10 @@ static mrb_value mrb_str_subseq(mrb_state *mrb, mrb_value str, mrb_int beg, mrb_
       s->ptr = (char *)mrb_realloc(mrb, s->ptr, (capacity)+1);\
       s->aux.capa = capacity;\
 } while(0)
+
+#ifndef MRB_STR_BUF_MIN_SIZE
+# define MRB_STR_BUF_MIN_SIZE 128
+#endif
 
 static void
 str_decref(mrb_state *mrb, mrb_shared_string *shared)
@@ -163,9 +168,29 @@ mrb_str_new_empty(mrb_state *mrb, mrb_value str)
   return mrb_obj_value(s);
 }
 
-#ifndef MRB_STR_BUF_MIN_SIZE
-# define MRB_STR_BUF_MIN_SIZE 128
-#endif
+mrb_value
+mrb_str_new_format(mrb_state *mrb, const char *fmt, ...)
+{
+  va_list ap;
+  mrb_value str;
+  struct RString *s;
+  int r = 0;
+
+  str = mrb_str_buf_new(mrb, MRB_STR_BUF_MIN_SIZE);
+  s = RSTRING(str);
+
+  va_start(ap, fmt);
+  r = vsnprintf(s->ptr, s->aux.capa, fmt, ap);
+  while (r >= s->aux.capa) {
+    RESIZE_CAPA(s, r + 1);
+    va_start(ap, fmt);
+    r = vsnprintf(s->ptr, s->aux.capa, fmt, ap);
+  }
+  va_end(ap);
+  s->len = r;
+
+  return str;
+}
 
 mrb_value
 mrb_str_buf_new(mrb_state *mrb, mrb_int capa)
@@ -212,6 +237,7 @@ str_buf_cat(mrb_state *mrb, struct RString *s, const char *ptr, size_t len)
     }
     RESIZE_CAPA(s, capa);
   }
+
   if (off != -1) {
       ptr = s->ptr + off;
   }
@@ -2347,47 +2373,47 @@ mrb_str_dump(mrb_state *mrb, mrb_value str)
         *q++ = '\\';
         *q++ = 'n';
         break;
-    
+
       case '\r':
         *q++ = '\\';
         *q++ = 'r';
         break;
-    
+
       case '\t':
         *q++ = '\\';
         *q++ = 't';
         break;
-    
+
       case '\f':
         *q++ = '\\';
         *q++ = 'f';
         break;
-    
+
       case '\013':
         *q++ = '\\';
         *q++ = 'v';
         break;
-    
+
       case '\010':
         *q++ = '\\';
         *q++ = 'b';
         break;
-    
+
       case '\007':
         *q++ = '\\';
         *q++ = 'a';
         break;
-    
+
       case '\033':
         *q++ = '\\';
         *q++ = 'e';
         break;
-    
+
       case '#':
         if (IS_EVSTR(p, pend)) *q++ = '\\';
         *q++ = '#';
         break;
-  
+
       default:
         if (ISPRINT(c)) {
           *q++ = c;
