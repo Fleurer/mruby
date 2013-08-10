@@ -5,22 +5,26 @@
 */
 
 #include "mruby.h"
-#include "mruby/variable.h"
 #include "mruby/proc.h"
+#include "mruby/string.h"
+#include "mruby/variable.h"
+#include "mruby/array.h"
 
-void
-mrb_print_backtrace(mrb_state *mrb)
+mrb_value
+mrb_trace_callers(mrb_state *mrb, mrb_bool show_i)
 {
-#ifdef ENABLE_STDIO
   mrb_callinfo *ci;
   mrb_int ciidx;
   const char *filename, *method, *sep;
   int i, line;
+  mrb_value result;
+  mrb_value str, tmp;
 
-  fputs("trace:\n", stderr);
+  result = mrb_ary_new(mrb);
+
   ciidx = mrb_fixnum(mrb_obj_iv_get(mrb, mrb->exc, mrb_intern2(mrb, "ciidx", 5)));
   if (ciidx >= mrb->c->ciend - mrb->c->cibase)
-    ciidx = 10; /* ciidx is broken... */
+    ciidx = 10;
 
   for (i = ciidx; i >= 0; i--) {
     ci = &mrb->c->cibase[i];
@@ -48,26 +52,49 @@ mrb_print_backtrace(mrb_state *mrb)
         }
       }
     }
-    if (line == -1) continue;
+    if (line == -1)
+      continue;
     if (ci->target_class == ci->proc->target_class)
       sep = ".";
     else
       sep = "#";
-
     method = mrb_sym2name(mrb, ci->mid);
+
+    /* concat the caller string */
     if (method) {
       const char *cn = mrb_class_name(mrb, ci->proc->target_class);
-
-      if (cn) {
-        fprintf(stderr, "\t[%d] %s:%d:in %s%s%s\n", i, filename, line, cn, sep, method);
-      }
-      else {
-        fprintf(stderr, "\t[%d] %s:%d:in %s\n", i, filename, line, method);
-      }
+      if (cn)
+        str = mrb_str_new_format(mrb, "%s:%d:in %s%s%s\n", filename, line, cn, sep, method);
+      else
+        str = mrb_str_new_format(mrb, "%s:%d:in %s\n", filename, line, method);
     }
     else {
-      fprintf(stderr, "\t[%d] %s:%d\n", i, filename, line);
+      str = mrb_str_new_format(mrb, "%s:%d\n", filename, line);
     }
+    if (show_i) {
+      tmp = mrb_str_new_format(mrb, "[%d] ", i);
+      mrb_str_concat(mrb, tmp, str);
+      str = tmp;
+    }
+    mrb_ary_push(mrb, result, str);
+  }
+  return result;
+}
+
+void
+mrb_print_backtrace(mrb_state *mrb)
+{
+#ifdef ENABLE_STDIO
+  mrb_value nil = mrb_nil_value();
+  mrb_value str, ary;
+
+  fputs("trace:\n", stderr);
+  ary = mrb_trace_callers(mrb, TRUE);
+  while (TRUE) {
+    str = mrb_ary_shift(mrb, ary);
+    if (mrb_obj_equal(mrb, str, nil))
+      break;
+    fprintf(stderr, "\t%s", RSTRING_PTR(str));
   }
 #endif
 }

@@ -51,6 +51,7 @@ struct RProc *mrb_proc_new_cfunc(mrb_state*, mrb_func_t);
 struct RProc *mrb_closure_new(mrb_state*, mrb_irep*);
 struct RProc *mrb_closure_new_cfunc(mrb_state *mrb, mrb_func_t func, int nlocals);
 void mrb_proc_copy(struct RProc *a, struct RProc *b);
+mrb_value mrb_trace_callers(mrb_state *mrb, mrb_bool show_i);
 
 #include "mruby/khash.h"
 KHASH_DECLARE(mt, mrb_sym, struct RProc*, 1)
