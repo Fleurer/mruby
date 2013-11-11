@@ -52,7 +52,7 @@ is_code_block_open(struct mrb_parser_state *parser)
   int code_block_open = FALSE;
 
   /* check for heredoc */
-  if (parser->parsing_heredoc != NULL) return TRUE;
+  if (parser->parsing_heredoc) return TRUE;
   if (parser->heredocs_from_nextline) return TRUE;
   if (parser->heredoc_end_now) {
     parser->heredoc_end_now = FALSE;

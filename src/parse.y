@@ -3765,7 +3765,7 @@ parse_string(parser_state *p)
 	    p->lineno++;
 	    p->column = 0;
 	    heredoc_treat_nextline(p);
-	    if (p->parsing_heredoc != NULL) {
+	    if (p->parsing_heredoc) {
 	      return tHD_LITERAL_DELIM;
 	    }
 	  }
@@ -3922,7 +3922,7 @@ parser_yylex(parser_state *p)
 
   if (p->lex_strterm) {
     if (is_strterm_type(p, STR_FUNC_HEREDOC)) {
-      if (p->parsing_heredoc != NULL)
+      if (p->parsing_heredoc)
 	return parse_string(p);
     }
     else
@@ -3958,14 +3958,14 @@ parser_yylex(parser_state *p)
     case EXPR_VALUE:
       p->lineno++;
       p->column = 0;
-      if (p->parsing_heredoc != NULL) {
+      if (p->parsing_heredoc) {
 	return parse_string(p);
       }
       goto retry;
     default:
       break;
     }
-    if (p->parsing_heredoc != NULL) {
+    if (p->parsing_heredoc) {
       return '\n';
     }
     while ((c = nextc(p))) {
